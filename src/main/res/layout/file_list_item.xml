@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/list_item"
+    android:layout_width="match_parent"
+    android:layout_height="80dp">
+
+    <ImageView
+        android:id="@+id/file_item_type_icon"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_marginLeft="5dp"
+        android:src="@drawable/ic_file_black_24dp" />
+
+    <TextView
+        android:id="@+id/file_item_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/list_item"
+        android:layout_toRightOf="@+id/file_item_type_icon"
+        android:layout_alignParentRight="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="5dp"
+        android:layout_marginTop="5dp"
+        android:textSize="22dp"
+        android:text="File Name" />
+
+    <TextView
+        android:id="@+id/file_item_path"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/file_item_name"
+        android:layout_below="@+id/file_item_name"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="5dp"
+        android:textSize="18dp"
+        android:text="File Path" />
+
+    <TextView
+        android:id="@+id/file_item_upd_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_below="@+id/file_item_path"
+        android:layout_marginRight="5dp"
+        android:textSize="18dp"
+        android:text="File Time" />
+
+    <TextView
+        android:id="@+id/file_item_disk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/file_item_path"
+        android:layout_below="@+id/file_item_path"
+        android:layout_toLeftOf="@id/file_item_upd_time"
+        android:layout_marginRight="5dp"
+        android:textSize="18dp"
+        android:text="File Path" />
+
+</RelativeLayout>

@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("kanna.air.mystorage.android", appContext.getPackageName());
+        assertEquals("air.kanna.mystorage.android", appContext.getPackageName());
     }
 }
