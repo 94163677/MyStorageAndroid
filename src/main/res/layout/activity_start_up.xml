@@ -50,7 +50,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:text="V1.0.0" />
+        android:text="@string/app_version" />
 
     <Button
         android:id="@+id/startup_ok_btn"

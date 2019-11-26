@@ -12,6 +12,7 @@ import java.util.List;
 
 import com.alibaba.fastjson.JSON;
 
+import air.kanna.mystorage.MyStorage;
 import air.kanna.mystorage.sync.model.ConnectParam;
 import air.kanna.mystorage.sync.model.FileData;
 import air.kanna.mystorage.sync.model.FileInformation;
@@ -85,7 +86,7 @@ public class LocalFileReceiveSyncProcess extends BaseSyncProcess {
     private void doFileData(FileData fileData) throws Exception {
         FileInforProcess proc = getFileInforProcess(fileData);
         if(proc == null) {
-            Log.w(getClass().getName(), "Cannot found FileInforProcess with fileId: " + fileData.getFileId());
+            Log.w(MyStorage.LOG_TAG, "Cannot found FileInforProcess with fileId: " + fileData.getFileId());
             return;
         }
         byte[] data = NumberUtil.fromHexString(fileData.getData());

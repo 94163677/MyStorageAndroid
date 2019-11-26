@@ -11,6 +11,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import com.alibaba.fastjson.JSON;
 
+import air.kanna.mystorage.MyStorage;
 import air.kanna.mystorage.sync.model.ConnectParam;
 import air.kanna.mystorage.sync.model.OperMessage;
 import air.kanna.mystorage.util.NumberUtil;
@@ -104,7 +105,7 @@ public abstract class BaseSyncProcess {
             case OperMessage.MSG_START: doStart(msg);break;
             case OperMessage.MSG_DATA: doData(msg);break;
             case OperMessage.MSG_END: doEnd(msg);break;
-            default: Log.e(getClass().getName(), "Cannot process message: " + msg);
+            default: Log.e(MyStorage.LOG_TAG, "Cannot process message: " + msg);
         }
     }
     

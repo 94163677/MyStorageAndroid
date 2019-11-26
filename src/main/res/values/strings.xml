@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">磁盘离线Android版</string>
+    <string name="app_name">我的硬盘Android版</string>
     <string name="author_name">Create by Hh7</string>
+    <string name="app_version">V1.0.0</string>
 
     <string name="actionbar_search">搜索</string>
     <string name="actionbar_sync">同步</string>
@@ -9,10 +10,25 @@
     <string name="input_password">请输入密码</string>
     <string name="password_wrong">密码错误，请重新输入</string>
 
+    <string name="base_path_not_found">找不到数据保存位置，请确保APP拥有读写存储的权限，程序将退出。</string>
+    <string name="select_base_path">请选择数据保存位置</string>
+    <string name="select_default_path">请选择数据保存位置有误，系统默认选择第一项</string>
+
+    <string name="init_data_error">初始化数据失败：</string>
+
+    <string name="dbfile_not_found">没有找到数据文件，请按右上角同步按钮同步数据。</string>
+    <string name="dbfile_check_error">数据文件校验失败，失败信息：</string>
+    <string name="table_version_error">数据文件版本信息校验失败</string>
+    <string name="table_disk_error">数据文件硬盘信息校验失败</string>
+    <string name="table_file_error">数据文件文件信息校验失败</string>
 
     <string name="list_foot_nodata">没有数据</string>
     <string name="list_foot_nomore">到底了</string>
     <string name="list_foot_loading">加载中</string>
+
+    <string name="dialog_title_infor">提示</string>
+    <string name="dialog_title_error">错误</string>
+    <string name="dialog_title_warn">警告</string>
 
     <string name="ok_button">确定</string>
     <string name="yes_button">是</string>
@@ -20,4 +36,5 @@
     <string name="cancel_button">取消</string>
 
     <string name="exit_app_msg">再按一次退出程序</string>
+    <string name="apply_storage_msg">本APP运行必须申请读写存储的权限，重新申请请按“确定”，按“取消”退出APP。</string>
 </resources>

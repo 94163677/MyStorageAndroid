@@ -8,16 +8,13 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import air.kanna.mystorage.model.FileItem;
 import air.kanna.mystorage.model.FileType;
 
 import kanna.air.mystorage.android.R;
-
-/**
- * Created by lenovo on 2019-11-21.
- */
 
 public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_ITEM = 0;// 第一种ViewType，正常的item
@@ -28,8 +25,8 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     private boolean hasMore = true;   // 变量，是否有更多数据
 
-    public FileListAdapter(List<FileItem> datas, Context context) {
-        this.datas = datas;
+    public FileListAdapter(Context context) {
+        this.datas = new ArrayList<>();
         this.context = context;
     }
 

@@ -30,38 +30,6 @@ public abstract class BaseCRUDServiceImpl<T, K> implements BaseCRUDService<T> {
         return exchangeToPojoList(modelDao.listAll(order, pager));
     }
 
-    @Override
-    public int add(T object) {
-        if(object == null) {
-            throw new NullPointerException("Object to add is null");
-        }
-        return modelDao.insert(exchangeToDto(object));
-    }
-
-    @Override
-    public int update(T object) {
-        if(object == null) {
-            throw new NullPointerException("Object to update is null");
-        }
-        return modelDao.update(exchangeToDto(object));
-    }
-
-    @Override
-    public int delete(T object) {
-        if(object == null) {
-            throw new NullPointerException("Object to delete is null");
-        }
-        return modelDao.delete(exchangeToDto(object));
-    }
-
-    @Override
-    public int deleteById(Object id) {
-        if(id == null) {
-            throw new NullPointerException("Object id is null");
-        }
-        return modelDao.deleteById(id);
-    }
-    
     protected List<T> exchangeToPojoList(List<K> list){
         if(list == null || list.size() <= 0) {
             return new ArrayList<>();

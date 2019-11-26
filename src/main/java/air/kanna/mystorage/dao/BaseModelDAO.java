@@ -7,12 +7,4 @@ public interface BaseModelDAO<T> {
     T getById(Object id);
     
     List<T> listAll(OrderBy order, Pager pager);
-    
-    int insert(T object);
-    
-    int update(T object);
-    
-    int delete(T object);
-    
-    int deleteById(Object id);
 }

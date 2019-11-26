@@ -12,6 +12,4 @@ public interface FileItemService
 
     int getByConditionCount(FileItemCondition condition);
     List<FileItem> getByCondition(FileItemCondition condition, OrderBy order, Pager pager);
-    
-    int deleteByCondition(FileItemCondition condition);
 }

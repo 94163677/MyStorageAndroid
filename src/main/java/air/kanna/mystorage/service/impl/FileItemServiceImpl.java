@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import air.kanna.mystorage.MyStorage;
 import air.kanna.mystorage.dao.BaseModelDAO;
 import air.kanna.mystorage.dao.FileItemDAO;
 import air.kanna.mystorage.dao.OrderBy;
@@ -57,11 +58,6 @@ public class FileItemServiceImpl
     }
     
     @Override
-    public int deleteByCondition(FileItemCondition condition) {
-        return fileItemDao.deleteByCondition(condition);
-    }
-    
-    @Override
     public void setModelDao(BaseModelDAO<FileItemDTO> modelDao) {
         if(modelDao instanceof FileItemDAO) {
             this.modelDao = modelDao;
@@ -81,14 +77,14 @@ public class FileItemServiceImpl
         try {
             List<DiskDescription> diskList = diskService.listAll(null, null);
             if(diskList == null || diskList.size() <= 0) {
-                Log.w(this.getClass().getName(), "Cannot found DiskDescription");
+                Log.w(MyStorage.LOG_TAG, "Cannot found DiskDescription");
                 return;
             }
             for(DiskDescription disk : diskList) {
                 diskIdMap.put(disk.getId(), disk);
             }
         }catch(Exception e) {
-            Log.w(this.getClass().getName(), "Get DiskDescription error.", e);
+            Log.w(MyStorage.LOG_TAG, "Get DiskDescription error.", e);
         }
     }
 }
