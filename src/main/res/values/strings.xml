@@ -26,14 +26,24 @@
     <string name="list_foot_nomore">到底了</string>
     <string name="list_foot_loading">加载中</string>
 
+
     <string name="dialog_title_infor">提示</string>
     <string name="dialog_title_error">错误</string>
     <string name="dialog_title_warn">警告</string>
+
+    <string name="dialog_search_title">搜索</string>
+    <string name="dialog_search_file_name">文件名称：</string>
+    <string name="dialog_search_file_type">文件类型：</string>
+    <string name="dialog_search_type_file">文件</string>
+    <string name="dialog_search_type_path">目录</string>
+    <string name="dialog_search_all">全部</string>
+    <string name="dialog_search_disk">所属磁盘：</string>
 
     <string name="ok_button">确定</string>
     <string name="yes_button">是</string>
     <string name="no_button">否</string>
     <string name="cancel_button">取消</string>
+    <string name="clear_button">清空</string>
 
     <string name="exit_app_msg">再按一次退出程序</string>
     <string name="apply_storage_msg">本APP运行必须申请读写存储的权限，重新申请请按“确定”，按“取消”退出APP。</string>

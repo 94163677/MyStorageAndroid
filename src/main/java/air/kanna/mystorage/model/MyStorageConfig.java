@@ -2,7 +2,7 @@ package air.kanna.mystorage.model;
 
 public class MyStorageConfig {
     //默认每页显示的数据量
-    public static final int DEFAULT_PAGE_SIZE = 50;
+    public static final int DEFAULT_PAGE_SIZE = 20;
     
     /**
      * 系统相关的设置

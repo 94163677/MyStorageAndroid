@@ -233,7 +233,7 @@ public class StartUpActivity extends BasicActivity {
         Intent intent = new Intent();
         Bundle bundle = new Bundle();
 
-        intent.setClass(this, MainActivity.class);
+        intent.setClass(this, FileSearchActivity.class);
         intent.putExtras(bundle);
 
         startActivity(intent);

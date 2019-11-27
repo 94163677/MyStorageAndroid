@@ -24,7 +24,10 @@
         android:layout_marginLeft="10dp"
         android:layout_marginRight="5dp"
         android:layout_marginTop="5dp"
-        android:textSize="22dp"
+        android:ellipsize="middle"
+        android:singleLine="true"
+        android:textStyle="bold"
+        android:textSize="20dp"
         android:text="File Name" />
 
     <TextView
@@ -35,6 +38,8 @@
         android:layout_below="@+id/file_item_name"
         android:layout_alignParentRight="true"
         android:layout_marginRight="5dp"
+        android:ellipsize="middle"
+        android:singleLine="true"
         android:textSize="18dp"
         android:text="File Path" />
 
@@ -45,6 +50,8 @@
         android:layout_alignParentRight="true"
         android:layout_below="@+id/file_item_path"
         android:layout_marginRight="5dp"
+        android:ellipsize="middle"
+        android:singleLine="true"
         android:textSize="18dp"
         android:text="File Time" />
 
@@ -56,6 +63,8 @@
         android:layout_below="@+id/file_item_path"
         android:layout_toLeftOf="@id/file_item_upd_time"
         android:layout_marginRight="5dp"
+        android:ellipsize="start"
+        android:singleLine="true"
         android:textSize="18dp"
         android:text="File Path" />
 

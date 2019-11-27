@@ -8,15 +8,23 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import air.kanna.mystorage.MyStorage;
@@ -30,6 +38,7 @@ import air.kanna.mystorage.dao.impl.android.sqlite.DiskDescriptionDAOAndroidSqli
 import air.kanna.mystorage.dao.impl.android.sqlite.FileItemDAOAndroidSqliteImpl;
 import air.kanna.mystorage.model.DiskDescription;
 import air.kanna.mystorage.model.FileItem;
+import air.kanna.mystorage.model.FileType;
 import air.kanna.mystorage.model.MyStorageConfig;
 import air.kanna.mystorage.service.DataBaseService;
 import air.kanna.mystorage.service.DiskDescriptionService;
@@ -44,8 +53,16 @@ public class FileSearchActivity extends BasicActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recyclerView;
     private GridLayoutManager recyclerLayout;
+    private MenuItem searchItem;
+    private MenuItem syncItem;
     private FileListAdapter adapter;
     private Handler mHandler = new Handler(Looper.getMainLooper());
+
+    private AlertDialog searchDialog = null;
+    private View dialogRoot = null;
+    private EditText fileName = null;
+    private Spinner fileType = null;
+    private Spinner diskSelected = null;
 
     private MyStorageConfig config;
     private DataBaseService<SQLiteDatabase> dataBaseService;
@@ -74,21 +91,26 @@ public class FileSearchActivity extends BasicActivity {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        if(condition == null){
-                            condition = getConditionFromConfig(config);
-                        }
-                        pager = new Pager();
-                        updateRecyclerView();
-                        swipeRefreshLayout.setRefreshing(false);
+                        doSearch(false);
                     }
                 });
             }
         });
 
         initRecyclerView();
+        doSearch(true);
+    }
 
-        condition = getConditionFromConfig(config);
+    private void doSearch(boolean isInit){
+        if(isInit){
+            condition = new FileItemCondition();
+        }else {
+            condition = getConditionFromConfig(config);
+        }
         pager = new Pager();
+        pager.setSize(config.getPageSize());
+        swipeRefreshLayout.setRefreshing(true);
+        updateRecyclerView(false);
     }
 
     private void checkAndInitData(){
@@ -133,6 +155,7 @@ public class FileSearchActivity extends BasicActivity {
         recyclerView.setLayoutManager(recyclerLayout);
         recyclerView.setAdapter(adapter);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
+        recyclerView.addItemDecoration(new DividerItemDecoration(current, DividerItemDecoration.VERTICAL));
 
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             private int lastVisibleItemIndex = -1;
@@ -150,7 +173,11 @@ public class FileSearchActivity extends BasicActivity {
                             @Override
                             public void run() {
                                 // 然后调用updateRecyclerview方法更新RecyclerView
-                                updateRecyclerView();
+                                if(pager.getPage() >= pager.getMaxPage()){
+                                    return;
+                                }
+                                pager.setPage(pager.getPage() + 1);
+                                updateRecyclerView(true);
                             }
                         }, 500);
                     }
@@ -166,7 +193,7 @@ public class FileSearchActivity extends BasicActivity {
         });
     }
 
-    private void updateRecyclerView() {
+    private void updateRecyclerView(boolean isAdd) {
         if(fileItemService == null){
             return;
         }
@@ -175,7 +202,12 @@ public class FileSearchActivity extends BasicActivity {
         }
 
         List<FileItem> itemList = fileItemService.getByCondition(condition, order, pager);
-        adapter.updateAndAddList(itemList, pager.getPage() >= pager.getMaxPage());
+        if(isAdd) {
+            adapter.updateAndAddList(itemList, pager);
+        }else{
+            adapter.resetDatas(itemList, pager);
+        }
+        swipeRefreshLayout.setRefreshing(false);
     }
 
     private FileItemCondition getConditionFromConfig(MyStorageConfig config){
@@ -229,7 +261,118 @@ public class FileSearchActivity extends BasicActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.actionbar_view_list, menu);
+
+        searchItem = menu.findItem(R.id.actionbar_search_btn);
+        syncItem = menu.findItem(R.id.actionbar_sync_btn);
+
+        searchItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                showSearch();
+                return true;
+            }
+        });
         return super.onCreateOptionsMenu(menu);
+    }
+
+    private AlertDialog getSeatchDialog(){
+        if(searchDialog != null){
+            return searchDialog;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(current);
+        dialogRoot = current.getLayoutInflater().inflate(R.layout.dialog_search_param, null);
+        fileName = dialogRoot.findViewById(R.id.dialog_search_file_name_edit);
+        fileType = dialogRoot.findViewById(R.id.dialog_search_type_spinner);
+        diskSelected = dialogRoot.findViewById(R.id.dialog_search_disk_spinner);
+
+        List<String> fileTypeData = Arrays.asList(
+                getString(R.string.dialog_search_all),
+                getString(R.string.dialog_search_type_file),
+                getString(R.string.dialog_search_type_path)
+        );
+
+        List<String> diskData = new ArrayList<>();
+        diskData.add(getString(R.string.dialog_search_all));
+        for(DiskDescription disk : diskList){
+            diskData.add(disk.getBasePath());
+        }
+
+        ArrayAdapter<String> typeAdapter = new ArrayAdapter<String>(
+                current, android.R.layout.simple_spinner_dropdown_item, fileTypeData);
+        ArrayAdapter<String> diskAdapter = new ArrayAdapter<String>(
+                current, android.R.layout.simple_spinner_dropdown_item, diskData);
+
+        fileType.setAdapter(typeAdapter);
+        diskSelected.setAdapter(diskAdapter);
+
+        builder.setView(dialogRoot)
+                .setCancelable(false)
+                .setTitle(R.string.dialog_search_title)
+                .setNeutralButton(R.string.clear_button, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        config.setSearchFileName("");
+                        fileName.setText("");
+
+                        config.setSearchFileType("");
+                        fileType.setSelection(0);
+
+                        config.setSearchDiskPath("");
+                        diskSelected.setSelection(0);
+                        ServiceFactory.getConfigService().saveConfig(config);
+                        doSearch(true);
+                    }
+                })
+                .setPositiveButton(R.string.ok_button, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        config.setSearchFileName(fileName.getText().toString());
+                        if(fileType.getSelectedItemPosition() == 1) {
+                            config.setSearchFileType("" + FileType.TYPE_FILE.getType());
+                        }else if(fileType.getSelectedItemPosition() == 2){
+                            config.setSearchFileType("" + FileType.TYPE_DICECTORY.getType());
+                        }else{
+                            config.setSearchFileType("");
+                        }
+                        int diskIndex = diskSelected.getSelectedItemPosition() - 1;
+                        if(diskIndex >= 0 && diskIndex < diskList.size()){
+                            config.setSearchDiskPath(diskList.get(diskIndex).getBasePath());
+                        }
+                        ServiceFactory.getConfigService().saveConfig(config);
+                        doSearch(false);
+                    }
+                })
+                .setNegativeButton(R.string.cancel_button, null);
+
+        return builder.create();
+    }
+    private void showSearch(){
+        AlertDialog dialog = getSeatchDialog();
+        int selected = -1;
+
+        fileName.setText(config.getSearchFileName());
+        if(StringUtil.isSpace(config.getSearchFileType())){
+            fileType.setSelection(0);
+        }else{
+            if(config.getSearchFileType().equalsIgnoreCase("" + FileType.TYPE_FILE.getType())){
+                fileType.setSelection(1);
+            }else{
+                fileType.setSelection(2);
+            }
+        }
+        for(int i=0; i<diskList.size(); i++){
+            if(diskList.get(i).getBasePath().equalsIgnoreCase(config.getSearchDiskPath())){
+                selected = i;
+                break;
+            }
+        }
+        if(selected < 0){
+            diskSelected.setSelection(0);
+        }else{
+            diskSelected.setSelection(selected + 1);
+        }
+
+        dialog.show();
     }
 
     @Override

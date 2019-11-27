@@ -122,7 +122,7 @@ public class FileItemDAOAndroidSqliteImpl
         }
         if(condition.getFileType() >= '0') {
             sb.append(" AND file_type = ? ");
-            params.add("" + condition.getFileType());
+            params.add("" + (int)condition.getFileType());
         }
         if(condition.getFileSizeMin() != null) {
             sb.append(" AND file_size >= ? ");

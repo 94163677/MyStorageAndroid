@@ -11,6 +11,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import air.kanna.mystorage.dao.Pager;
 import air.kanna.mystorage.model.FileItem;
 import air.kanna.mystorage.model.FileType;
 
@@ -22,24 +23,23 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     private Context context;
     private List<FileItem> datas;// 数据源
-
-    private boolean hasMore = true;   // 变量，是否有更多数据
+    private Pager pager;//分页信息
 
     public FileListAdapter(Context context) {
         this.datas = new ArrayList<>();
         this.context = context;
     }
 
-    public void resetDatas(List<FileItem> newDatas, boolean hasMore) {
+    public void resetDatas(List<FileItem> newDatas, Pager pager) {
         datas.clear();
-        updateAndAddList(newDatas, hasMore);
+        updateAndAddList(newDatas, pager);
     }
 
-    public void updateAndAddList(List<FileItem> newDatas, boolean hasMore) {
+    public void updateAndAddList(List<FileItem> newDatas, Pager pager) {
         if(newDatas != null && newDatas.size() > 0){
             datas.addAll(newDatas);
         }
-        this.hasMore = hasMore;
+        this.pager = pager;
         notifyDataSetChanged();
     }
 
@@ -105,8 +105,13 @@ public class FileListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
             text.setText(R.string.list_foot_nodata);
             return;
         }
-        if (hasMore == true){
-            text.setText(R.string.list_foot_loading);
+        if (pager != null && (pager.getPage() < pager.getMaxPage())){
+            StringBuilder sb = new StringBuilder();
+            sb.append(context.getString(R.string.list_foot_loading))
+                    .append(" ( ").append(pager.getPage())
+                    .append('/').append(pager.getMaxPage()).append(" )");
+
+            text.setText(sb.toString());
         }else{
             text.setText(R.string.list_foot_nomore);
         }
