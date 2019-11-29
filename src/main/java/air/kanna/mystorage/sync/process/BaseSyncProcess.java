@@ -65,15 +65,19 @@ public abstract class BaseSyncProcess {
     }
     
     public void finish() throws Exception{
-        OperMessage reply = new OperMessage();
-
-        reply.setMessageType(OperMessage.MSG_END);
-        reply.setMessage("");
-        
-        sendMessage(reply);
-        isBreak = true;
         if(!socket.isClosed()) {
-            socket.close();
+            OperMessage reply = new OperMessage();
+
+            reply.setMessageType(OperMessage.MSG_END);
+            reply.setMessage("");
+
+            sendMessage(reply);
+            isBreak = true;
+            if (!socket.isClosed()) {
+                socket.close();
+            }
+        }else{
+            isBreak = true;
         }
     }
     

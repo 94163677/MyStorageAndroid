@@ -20,6 +20,8 @@ import air.kanna.mystorage.sync.model.OperMessage;
 import air.kanna.mystorage.util.NumberUtil;
 
 public class LocalFileReceiveSyncProcess extends BaseSyncProcess {
+    public static final String TRANS_TEMP_FILE_END = ".tns";
+
     private File baseFile;
     private List<FileInforProcess> fileList = new ArrayList<>();
     
@@ -106,7 +108,7 @@ public class LocalFileReceiveSyncProcess extends BaseSyncProcess {
         FileInforProcess proc = new FileInforProcess(fileInfo);
         
         proc.setCheckDigest(MessageDigest.getInstance("MD5"));
-        proc.setFileName(fileInfo.getFileName() + "." + fileInfo.getFileId() + ".tns");
+        proc.setFileName(fileInfo.getFileName() + "." + fileInfo.getFileId() + TRANS_TEMP_FILE_END);
         
         File tranFile = new File(baseFile, proc.getFileName());
         if(tranFile.exists()) {

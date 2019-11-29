@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.DividerItemDecoration;
@@ -61,13 +62,19 @@ import air.kanna.mystorage.util.StringUtil;
 import kanna.air.mystorage.android.R;
 
 public class FileSearchActivity extends BasicActivity {
+    private static final int MSG_START_LOADING = 1;
+    private static final int MSG_END_LOADING = 2;
+    private static final int MSG_SHOW_ERROR_DIALOG = 3;
+    private static final int MSG_SHOW_INFOR_DIALOG = 4;
+    private static final int MSG_DO_SEARCH = 5;
+
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recyclerView;
     private GridLayoutManager recyclerLayout;
     private MenuItem searchItem;
     private MenuItem syncItem;
     private FileListAdapter adapter;
-    private Handler mHandler = new Handler(Looper.getMainLooper());
+    private Handler mHandler;
 
     private AlertDialog searchDialog = null;
     private View dialogRoot = null;
@@ -98,6 +105,29 @@ public class FileSearchActivity extends BasicActivity {
         recyclerView = findViewById(R.id.recycler_view);
         recyclerLayout = new GridLayoutManager(current, 1);
 
+        mHandler = new Handler(Looper.getMainLooper()){
+            @Override
+            public void handleMessage(Message msg){
+                if(msg.what == MSG_START_LOADING){
+                    swipeRefreshLayout.setRefreshing(true);
+                }else
+                if(msg.what == MSG_END_LOADING){
+                    swipeRefreshLayout.setRefreshing(false);
+                }else
+                if(msg.what == MSG_SHOW_ERROR_DIALOG){
+                    Toast.makeText(current, msg.obj.toString() , Toast.LENGTH_LONG).show();
+//                    showErrorMessage(msg.obj.toString(), null);
+                }else
+                if(msg.what == MSG_SHOW_INFOR_DIALOG){
+                    showInformationMessage(msg.obj.toString(), null);
+                }
+                if(msg.what == MSG_DO_SEARCH){
+                    doSearch();
+                }
+                super.handleMessage(msg);
+            }
+        };
+
         checkAndInitData();
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
@@ -106,25 +136,23 @@ public class FileSearchActivity extends BasicActivity {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        doSearch(false);
+                        doSearch();
                     }
                 });
             }
         });
 
         initRecyclerView();
-        doSearch(true);
+        doSearch();
     }
 
-    private void doSearch(boolean isInit){
-        if(isInit){
-            condition = new FileItemCondition();
-        }else {
-            condition = getConditionFromConfig(config);
-        }
+    private void doSearch(){
+        condition = getConditionFromConfig(config);
         pager = new Pager();
         pager.setSize(config.getPageSize());
-        swipeRefreshLayout.setRefreshing(true);??主线程才能访问
+
+        mHandler.sendEmptyMessage(MSG_START_LOADING);
+
         updateRecyclerView(false);
     }
 
@@ -225,7 +253,8 @@ public class FileSearchActivity extends BasicActivity {
         }else{
             adapter.resetDatas(itemList, pager);
         }
-        swipeRefreshLayout.setRefreshing(false);
+
+        mHandler.sendEmptyMessage(MSG_END_LOADING);
     }
 
     private FileItemCondition getConditionFromConfig(MyStorageConfig config){
@@ -361,7 +390,7 @@ public class FileSearchActivity extends BasicActivity {
                         config.setSearchDiskPath("");
                         diskSelected.setSelection(0);
                         ServiceFactory.getConfigService().saveConfig(config);
-                        doSearch(true);
+                        doSearch();
                     }
                 })
                 .setPositiveButton(R.string.ok_button, new DialogInterface.OnClickListener() {
@@ -380,7 +409,7 @@ public class FileSearchActivity extends BasicActivity {
                             config.setSearchDiskPath(diskList.get(diskIndex).getBasePath());
                         }
                         ServiceFactory.getConfigService().saveConfig(config);
-                        doSearch(false);
+                        doSearch();
                     }
                 })
                 .setNegativeButton(R.string.cancel_button, null);
@@ -429,6 +458,24 @@ public class FileSearchActivity extends BasicActivity {
         integrator.initiateScan();
     }
 
+    private void cleanUnsucessFiles(File path){
+        File[] files = path.listFiles();
+        for(int i=0; i<files.length; i++){
+            if(!files[i].isFile()){
+                continue;
+            }
+            if(!files[i].exists()){
+                continue;
+            }
+            if(!files[i].getName().startsWith(config.getDbFileName())){
+                continue;
+            }
+            if(!files[i].getName().endsWith(LocalFileReceiveSyncProcess.TRANS_TEMP_FILE_END)){
+                continue;
+            }
+            files[i].delete();
+        }
+    }
     private void doSync(final ConnectParam param){
         if(param == null){
             return;
@@ -441,30 +488,44 @@ public class FileSearchActivity extends BasicActivity {
             }
         }
         try{
+            cleanUnsucessFiles(basePath);
             getProgressDialog().show();
             new Thread(){
                 @Override
                 public void run() {
                     LocalFileReceiveSyncProcess process = null;
+                    boolean isSuccess = false;
                     try {
                         process = new LocalFileReceiveSyncProcess(param, basePath);
                         Socket socket = new Socket(param.getIp(), param.getPort());
 
                         process.setListener(processListener);
                         process.start(socket);
+//                        Toast.makeText(current, R.string.sync_success_msg , Toast.LENGTH_SHORT).show();
+                        isSuccess = true;
                     }catch(Exception e){
+                        processDialog.dismiss();
                         Log.e(MyStorage.LOG_TAG, "error", e);
+                        Message msg = new Message();
+                        msg.what = MSG_SHOW_ERROR_DIALOG;
+                        msg.obj = current.getString(R.string.sync_error_msg) + e.getMessage();
+                        mHandler.sendMessage(msg);
                     }finally {
                         processDialog.dismiss();
-                        checkAndInitData();
-                        doSearch(true);
+                        if(isSuccess) {
+                            checkAndInitData();
+                            mHandler.sendEmptyMessage(MSG_DO_SEARCH);
+                        }
                         if(process != null && !process.isFinish()) {
                             try {
                                 process.finish();
                             } catch (Exception e) {
                                 Log.e(MyStorage.LOG_TAG, "finish error", e);
                                 if(!e.getMessage().equalsIgnoreCase("Socket closed")){
-                                    showErrorMessage(current.getString(R.string.sync_error_msg) + e.getMessage(), null);
+                                    Message msg = new Message();
+                                    msg.what = MSG_SHOW_ERROR_DIALOG;
+                                    msg.obj = current.getString(R.string.sync_error_msg) + e.getMessage();
+                                    mHandler.sendMessage(msg);
                                 }
                             }
                         }
