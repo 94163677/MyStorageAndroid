@@ -2,6 +2,7 @@ package air.kanna.mystorage.sync.process;
 
 import android.util.Log;
 
+import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -18,6 +19,8 @@ import air.kanna.mystorage.util.NumberUtil;
 import air.kanna.mystorage.util.StringUtil;
 
 public abstract class BaseSyncProcess {
+    public static final int DEFAULT_BLOCK_SIZE = 50 * 1024;//默认块大小：50KB
+
     protected static final int KEY_LENGTH = 128 / 8;//默认128位
     protected static final String ALGORITHM = "AES";
     //如果用CBC方式，需要添加IV，不然解密会报错
@@ -59,8 +62,8 @@ public abstract class BaseSyncProcess {
         }
         isBreak = false;
         this.socket = socket;
-        
-        dealInput(socket.getInputStream());
+
+        dealInput(new BufferedInputStream(socket.getInputStream(), 10 * DEFAULT_BLOCK_SIZE));
         socket.close();
     }
     
@@ -100,12 +103,17 @@ public abstract class BaseSyncProcess {
         StringBuilder sb = new StringBuilder();
         int ch = -1;
         
-        for(ch=ins.read(); ((!isBreak) && ch>=0); ch=ins.read()) {
+        for(ch=ins.read(); ch>=0; ) {
             if(ch == 0) {
                 dealMessage(getMessage(sb.toString()));
                 sb = new StringBuilder();
             }else {
                 sb.append((char)ch);
+            }
+            if(!isBreak){
+                ch = ins.read();
+            }else{
+                break;
             }
         }
         if(sb.length() > 0) {
