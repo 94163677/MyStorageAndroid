@@ -64,9 +64,12 @@ import kanna.air.mystorage.android.R;
 public class FileSearchActivity extends BasicActivity {
     private static final int MSG_START_LOADING = 1;
     private static final int MSG_END_LOADING = 2;
-    private static final int MSG_SHOW_ERROR_DIALOG = 3;
+    private static final int MSG_SHOW_ERROR_TOAST = 3;
     private static final int MSG_SHOW_INFOR_DIALOG = 4;
     private static final int MSG_DO_SEARCH = 5;
+    private static final int MSG_DO_SYNC = 6;
+    private static final int MSG_SHOW_SYNC_PARAM = 7;
+    private static final int MSG_SHOW_ERROR_DIALOG = 8;
 
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView recyclerView;
@@ -77,10 +80,16 @@ public class FileSearchActivity extends BasicActivity {
     private Handler mHandler;
 
     private AlertDialog searchDialog = null;
-    private View dialogRoot = null;
+    private View searchDialogRoot = null;
     private EditText fileName = null;
     private Spinner fileType = null;
     private Spinner diskSelected = null;
+
+    private AlertDialog syncParamDialog = null;
+    private View syncParamDialogRoot = null;
+    private EditText syncIp = null;
+    private EditText syncPort = null;
+    private EditText syncKey = null;
 
     private Dialog processDialog = null;
     private AndroidProcessListener processListener;
@@ -108,22 +117,33 @@ public class FileSearchActivity extends BasicActivity {
         mHandler = new Handler(Looper.getMainLooper()){
             @Override
             public void handleMessage(Message msg){
-                if(msg.what == MSG_START_LOADING){
-                    swipeRefreshLayout.setRefreshing(true);
-                }else
-                if(msg.what == MSG_END_LOADING){
-                    swipeRefreshLayout.setRefreshing(false);
-                }else
-                if(msg.what == MSG_SHOW_ERROR_DIALOG){
-                    Toast.makeText(current, msg.obj.toString() , Toast.LENGTH_LONG).show();
-//                    showErrorMessage(msg.obj.toString(), null);
-                }else
-                if(msg.what == MSG_SHOW_INFOR_DIALOG){
-                    showInformationMessage(msg.obj.toString(), null);
+                switch(msg.what){
+                    case MSG_START_LOADING: {
+                        swipeRefreshLayout.setRefreshing(true);
+                    };break;
+                    case MSG_END_LOADING: {
+                        swipeRefreshLayout.setRefreshing(false);
+                    };break;
+                    case MSG_SHOW_ERROR_TOAST: {
+                        Toast.makeText(current, msg.obj.toString() , Toast.LENGTH_LONG).show();
+                    };break;
+                    case MSG_SHOW_INFOR_DIALOG: {
+                        showInformationMessage(msg.obj.toString(), null);
+                    };break;
+                    case MSG_DO_SEARCH: {
+                        doSearch();
+                    };break;
+                    case MSG_DO_SYNC: {
+                        doSync((ConnectParam) msg.obj);
+                    };break;
+                    case MSG_SHOW_SYNC_PARAM: {
+                        showInputSync();
+                    };break;
+                    case MSG_SHOW_ERROR_DIALOG: {
+                        showErrorMessage(msg.obj.toString(), null);
+                    }
                 }
-                if(msg.what == MSG_DO_SEARCH){
-                    doSearch();
-                }
+
                 super.handleMessage(msg);
             }
         };
@@ -241,6 +261,7 @@ public class FileSearchActivity extends BasicActivity {
 
     private void updateRecyclerView(boolean isAdd) {
         if(fileItemService == null){
+            mHandler.sendEmptyMessage(MSG_END_LOADING);
             return;
         }
         if(pager.getTotal() <= 0){
@@ -316,11 +337,19 @@ public class FileSearchActivity extends BasicActivity {
             @Override
             public void run() {
                 View searchItemView = findViewById(R.id.actionbar_search_btn);
+                View syncItemView = findViewById(R.id.actionbar_sync_btn);
 
                 searchItemView.setOnLongClickListener(new View.OnLongClickListener() {
                     @Override
                     public boolean onLongClick(View v) {
                         showInformationMessage("searchItemView long click", null);
+                        return true;
+                    }
+                });
+                syncItemView.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        mHandler.sendEmptyMessage(MSG_SHOW_SYNC_PARAM);
                         return true;
                     }
                 });
@@ -345,15 +374,56 @@ public class FileSearchActivity extends BasicActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
+    private AlertDialog getSyncParamDialog(){
+        if(syncParamDialog != null){
+            return syncParamDialog;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(current);
+        syncParamDialogRoot = current.getLayoutInflater().inflate(R.layout.dialog_sync_param, null);
+        syncIp = syncParamDialogRoot.findViewById(R.id.dialog_sync_ip_edit);
+        syncPort = syncParamDialogRoot.findViewById(R.id.dialog_sync_port_edit);
+        syncKey = syncParamDialogRoot.findViewById(R.id.dialog_sync_key_edit);
+
+        builder.setView(syncParamDialogRoot)
+                .setCancelable(false)
+                .setTitle(R.string.dialog_sync_param_title)
+                .setNegativeButton(R.string.cancel_button, null)
+                .setPositiveButton(R.string.ok_button, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ConnectParam param = new ConnectParam();
+                        try {
+                            param.setIp(syncIp.getText().toString());
+                            param.setPort(Integer.parseInt(syncPort.getText().toString()));
+                            param.setKey(syncKey.getText().toString());
+                        }catch (Exception e){
+                            Log.e(MyStorage.LOG_TAG, "get sync param error", e);
+                            Message msg = new Message();
+                            msg.what = MSG_SHOW_ERROR_DIALOG;
+                            msg.obj = current.getString(R.string.sync_error_input_msg) + e.getMessage();
+                            mHandler.sendMessage(msg);
+                            param = null;
+                        }
+                        if(param != null) {
+                            Message msg = new Message();
+                            msg.what = MSG_DO_SYNC;
+                            msg.obj = param;
+                            mHandler.sendMessage(msg);
+                        }
+                    }
+                });
+        return builder.create();
+    }
+
     private AlertDialog getSeatchDialog(){
         if(searchDialog != null){
             return searchDialog;
         }
         AlertDialog.Builder builder = new AlertDialog.Builder(current);
-        dialogRoot = current.getLayoutInflater().inflate(R.layout.dialog_search_param, null);
-        fileName = dialogRoot.findViewById(R.id.dialog_search_file_name_edit);
-        fileType = dialogRoot.findViewById(R.id.dialog_search_type_spinner);
-        diskSelected = dialogRoot.findViewById(R.id.dialog_search_disk_spinner);
+        searchDialogRoot = current.getLayoutInflater().inflate(R.layout.dialog_search_param, null);
+        fileName = searchDialogRoot.findViewById(R.id.dialog_search_file_name_edit);
+        fileType = searchDialogRoot.findViewById(R.id.dialog_search_type_spinner);
+        diskSelected = searchDialogRoot.findViewById(R.id.dialog_search_disk_spinner);
 
         List<String> fileTypeData = Arrays.asList(
                 getString(R.string.dialog_search_all),
@@ -375,7 +445,7 @@ public class FileSearchActivity extends BasicActivity {
         fileType.setAdapter(typeAdapter);
         diskSelected.setAdapter(diskAdapter);
 
-        builder.setView(dialogRoot)
+        builder.setView(searchDialogRoot)
                 .setCancelable(false)
                 .setTitle(R.string.dialog_search_title)
                 .setNeutralButton(R.string.clear_button, new DialogInterface.OnClickListener() {
@@ -418,6 +488,10 @@ public class FileSearchActivity extends BasicActivity {
     }
 
     private void showSearch(){
+        if(fileItemService == null){
+            showInformationMessage(R.string.dbfile_not_found, null);
+            return;
+        }
         AlertDialog dialog = getSeatchDialog();
         int selected = -1;
 
@@ -447,7 +521,8 @@ public class FileSearchActivity extends BasicActivity {
     }
 
     private void showInputSync(){
-
+        AlertDialog dialog = getSyncParamDialog();
+        dialog.show();
     }
 
     private void showScanSync(){
@@ -507,7 +582,7 @@ public class FileSearchActivity extends BasicActivity {
                         processDialog.dismiss();
                         Log.e(MyStorage.LOG_TAG, "error", e);
                         Message msg = new Message();
-                        msg.what = MSG_SHOW_ERROR_DIALOG;
+                        msg.what = MSG_SHOW_ERROR_TOAST;
                         msg.obj = current.getString(R.string.sync_error_msg) + e.getMessage();
                         mHandler.sendMessage(msg);
                     }finally {
@@ -523,7 +598,7 @@ public class FileSearchActivity extends BasicActivity {
                                 Log.e(MyStorage.LOG_TAG, "finish error", e);
                                 if(!e.getMessage().equalsIgnoreCase("Socket closed")){
                                     Message msg = new Message();
-                                    msg.what = MSG_SHOW_ERROR_DIALOG;
+                                    msg.what = MSG_SHOW_ERROR_TOAST;
                                     msg.obj = current.getString(R.string.sync_error_msg) + e.getMessage();
                                     mHandler.sendMessage(msg);
                                 }
@@ -577,7 +652,7 @@ public class FileSearchActivity extends BasicActivity {
                     .setNeutralButton(R.string.input_button, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-
+                            mHandler.sendEmptyMessage(MSG_SHOW_SYNC_PARAM);
                         }
                     })
                     .show();

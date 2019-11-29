@@ -40,6 +40,11 @@
     <string name="dialog_search_all">全部</string>
     <string name="dialog_search_disk">所属磁盘：</string>
 
+    <string name="dialog_sync_param_title">手动输入同步参数</string>
+    <string name="dialog_sync_ip">IP地址：</string>
+    <string name="dialog_sync_port">端口：</string>
+    <string name="dialog_sync_key">密码：</string>
+
     <string name="ok_button">确定</string>
     <string name="yes_button">是</string>
     <string name="no_button">否</string>
@@ -52,5 +57,6 @@
     <string name="apply_storage_msg">本APP运行必须申请读写存储的权限，重新申请请按“确定”，按“取消”退出APP。</string>
     <string name="sync_param_scan_error_msg">扫描二维码获取同步参数错误。</string>
     <string name="sync_error_msg">同步错误：</string>
+    <string name="sync_error_input_msg">同步参数错误：</string>
     <string name="sync_success_msg">同步成功</string>
 </resources>
