@@ -16,6 +16,7 @@
 
     <string name="init_data_error">初始化数据失败：</string>
 
+    <string name="dbpath_create_error">创建数据库保存目录失败，请确保APP拥有读写存储的权限。</string>
     <string name="dbfile_not_found">没有找到数据文件，请按右上角同步按钮同步数据。</string>
     <string name="dbfile_check_error">数据文件校验失败，失败信息：</string>
     <string name="table_version_error">数据文件版本信息校验失败</string>
@@ -44,7 +45,11 @@
     <string name="no_button">否</string>
     <string name="cancel_button">取消</string>
     <string name="clear_button">清空</string>
+    <string name="input_button">手动输入</string>
+    <string name="rescan_button">重新扫描</string>
 
     <string name="exit_app_msg">再按一次退出程序</string>
     <string name="apply_storage_msg">本APP运行必须申请读写存储的权限，重新申请请按“确定”，按“取消”退出APP。</string>
+    <string name="sync_param_scan_error_msg">扫描二维码获取同步参数错误。</string>
+    <string name="sync_error_msg">同步错误：</string>
 </resources>

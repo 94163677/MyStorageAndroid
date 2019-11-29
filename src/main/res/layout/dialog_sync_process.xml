@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/list_item"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/dialog_sync_proc_msg"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_margin="6dp"
+        android:text="@string/actionbar_sync"
+        android:textSize="18dp"
+        android:singleLine="true"
+        android:ellipsize="start"
+        android:layout_alignParentTop="true"/>
+
+    <ProgressBar
+        android:id="@+id/dialog_sync_proc_bar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/dialog_sync_proc_msg"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="6dp" />
+
+</RelativeLayout>

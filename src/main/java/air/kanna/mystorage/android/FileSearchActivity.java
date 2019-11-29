@@ -1,7 +1,9 @@
 package air.kanna.mystorage.android;
 
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,10 +21,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.alibaba.fastjson.JSON;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+
 import java.io.File;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +55,8 @@ import air.kanna.mystorage.service.FileItemService;
 import air.kanna.mystorage.service.impl.AndroidSqliteDataBaseServiceImpl;
 import air.kanna.mystorage.service.impl.DiskDescriptionServiceImpl;
 import air.kanna.mystorage.service.impl.FileItemServiceImpl;
+import air.kanna.mystorage.sync.model.ConnectParam;
+import air.kanna.mystorage.sync.process.LocalFileReceiveSyncProcess;
 import air.kanna.mystorage.util.StringUtil;
 import kanna.air.mystorage.android.R;
 
@@ -64,6 +75,11 @@ public class FileSearchActivity extends BasicActivity {
     private Spinner fileType = null;
     private Spinner diskSelected = null;
 
+    private Dialog processDialog = null;
+    private AndroidProcessListener processListener;
+    private TextView processMsg = null;
+    private ProgressBar processBar = null;
+
     private MyStorageConfig config;
     private DataBaseService<SQLiteDatabase> dataBaseService;
     private DiskDescriptionService diskService;
@@ -72,7 +88,6 @@ public class FileSearchActivity extends BasicActivity {
     private Pager pager;
     private final OrderBy order = getDefaultOrder();
     private List<DiskDescription> diskList;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,7 +124,7 @@ public class FileSearchActivity extends BasicActivity {
         }
         pager = new Pager();
         pager.setSize(config.getPageSize());
-        swipeRefreshLayout.setRefreshing(true);
+        swipeRefreshLayout.setRefreshing(true);??主线程才能访问
         updateRecyclerView(false);
     }
 
@@ -119,7 +134,10 @@ public class FileSearchActivity extends BasicActivity {
 
             File basePath = new File(config.getSelectedPath());
             if(!basePath.exists()){
-                basePath.mkdirs();
+                if(!basePath.mkdirs()){
+                    showErrorMessage(R.string.dbpath_create_error, null);
+                    return;
+                }
             }
             File dbFile = new File(basePath, config.getDbFileName());
             if(!dbFile.exists() || !dbFile.isFile()){
@@ -265,10 +283,33 @@ public class FileSearchActivity extends BasicActivity {
         searchItem = menu.findItem(R.id.actionbar_search_btn);
         syncItem = menu.findItem(R.id.actionbar_sync_btn);
 
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                View searchItemView = findViewById(R.id.actionbar_search_btn);
+
+                searchItemView.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        showInformationMessage("searchItemView long click", null);
+                        return true;
+                    }
+                });
+            }
+        }, 1000);
+
         searchItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 showSearch();
+                return true;
+            }
+        });
+
+        syncItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                showScanSync();
                 return true;
             }
         });
@@ -346,6 +387,7 @@ public class FileSearchActivity extends BasicActivity {
 
         return builder.create();
     }
+
     private void showSearch(){
         AlertDialog dialog = getSeatchDialog();
         int selected = -1;
@@ -373,6 +415,114 @@ public class FileSearchActivity extends BasicActivity {
         }
 
         dialog.show();
+    }
+
+    private void showInputSync(){
+
+    }
+
+    private void showScanSync(){
+        IntentIntegrator integrator = new IntentIntegrator(this);
+        integrator.setOrientationLocked(false);
+        integrator.setBeepEnabled(false);
+
+        integrator.initiateScan();
+    }
+
+    private void doSync(final ConnectParam param){
+        if(param == null){
+            return;
+        }
+        final File basePath = new File(config.getSelectedPath());
+        if(!basePath.exists()){
+            if(!basePath.mkdirs()){
+                showErrorMessage(R.string.dbpath_create_error, null);
+                return;
+            }
+        }
+        try{
+            getProgressDialog().show();
+            new Thread(){
+                @Override
+                public void run() {
+                    LocalFileReceiveSyncProcess process = null;
+                    try {
+                        process = new LocalFileReceiveSyncProcess(param, basePath);
+                        Socket socket = new Socket(param.getIp(), param.getPort());
+
+                        process.setListener(processListener);
+                        process.start(socket);
+                    }catch(Exception e){
+                        Log.e(MyStorage.LOG_TAG, "error", e);
+                    }finally {
+                        processDialog.dismiss();
+                        checkAndInitData();
+                        doSearch(true);
+                        if(process != null && !process.isFinish()) {
+                            try {
+                                process.finish();
+                            } catch (Exception e) {
+                                Log.e(MyStorage.LOG_TAG, "finish error", e);
+                                if(!e.getMessage().equalsIgnoreCase("Socket closed")){
+                                    showErrorMessage(current.getString(R.string.sync_error_msg) + e.getMessage(), null);
+                                }
+                            }
+                        }
+                    }
+                }
+            }.start();
+        }catch (Exception e){
+            Log.e(MyStorage.LOG_TAG, "error", e);
+            showErrorMessage(current.getString(R.string.sync_error_msg) + e.getMessage(), null);
+        }
+    }
+
+    private Dialog getProgressDialog(){
+        if(processDialog != null){
+            return processDialog;
+        }
+        processDialog = new Dialog(current);
+        processDialog.setContentView(R.layout.dialog_sync_process);
+
+        processMsg = processDialog.findViewById(R.id.dialog_sync_proc_msg);
+        processBar = processDialog.findViewById(R.id.dialog_sync_proc_bar);
+        processListener = new AndroidProcessListener(processMsg, processBar);
+        return processDialog;
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data){
+        ConnectParam syncParam = null;
+        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (scanResult != null) {
+            String resultStr = scanResult.getContents();
+            try {
+                syncParam = JSON.parseObject(resultStr, ConnectParam.class);
+            } catch (Exception e) {
+                Log.e(MyStorage.LOG_TAG, "Parse ConnectParam error.", e);
+            }
+        }
+        if(syncParam == null){
+            new AlertDialog.Builder(current)
+                    .setTitle(R.string.dialog_title_error)
+                    .setMessage(R.string.sync_param_scan_error_msg)
+                    .setPositiveButton(R.string.rescan_button, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            showScanSync();
+                        }
+                    })
+                    .setNegativeButton(R.string.cancel_button, null)
+                    .setNeutralButton(R.string.input_button, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                        }
+                    })
+                    .show();
+        }else{
+            doSync(syncParam);
+        }
     }
 
     @Override

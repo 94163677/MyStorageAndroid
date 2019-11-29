@@ -22,7 +22,6 @@ import air.kanna.mystorage.util.NumberUtil;
 public class LocalFileReceiveSyncProcess extends BaseSyncProcess {
     private File baseFile;
     private List<FileInforProcess> fileList = new ArrayList<>();
-    private boolean isFinish = true;
     
     public LocalFileReceiveSyncProcess(ConnectParam param, File file) {
         super(param);
@@ -100,6 +99,7 @@ public class LocalFileReceiveSyncProcess extends BaseSyncProcess {
             proc.getCheckDigest().update(data);
             proc.getOutStream().write(data);
         }
+        listener.setPosition(fileData.getDataNum(), null);
     }
     
     private void doNewInputFile(FileInformation fileInfo) throws Exception {
@@ -117,6 +117,10 @@ public class LocalFileReceiveSyncProcess extends BaseSyncProcess {
         proc.setOutStream(
                 new BufferedOutputStream(
                         new FileOutputStream(tranFile), (10 * fileInfo.getDataSize())));
+        
+        listener.setMax(proc.getMaxBlock());
+        listener.setPosition(0, fileInfo.getFileName());
+        
         fileList.add(proc);
     }
     
@@ -136,6 +140,9 @@ public class LocalFileReceiveSyncProcess extends BaseSyncProcess {
         }
         
         fileList.remove(proc);
+        
+        listener.finish(fileInfo.getFileName());
+        
         if(fileList.size() <= 0) {
             isBreak = true;
             finish();

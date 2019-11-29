@@ -28,6 +28,7 @@ public abstract class BaseSyncProcess {
     protected Socket socket;
     protected byte[] key;
     protected boolean isBreak = false;
+    protected ProcessListener listener = getNullProcessListener();
     
     protected abstract void doStart(OperMessage msg) throws Exception;
     protected abstract void doData(OperMessage msg) throws Exception;
@@ -71,13 +72,26 @@ public abstract class BaseSyncProcess {
         
         sendMessage(reply);
         isBreak = true;
-        socket.close();
+        if(!socket.isClosed()) {
+            socket.close();
+        }
     }
     
     public boolean isFinish() {
         return isBreak;
     }
-    
+
+    public ProcessListener getListener() {
+        return listener;
+    }
+
+    public void setListener(ProcessListener listener) {
+        if(listener == null){
+            listener = getNullProcessListener();
+        }
+        this.listener = listener;
+    }
+
     private void dealInput(InputStream ins) throws Exception{
         StringBuilder sb = new StringBuilder();
         int ch = -1;
@@ -180,5 +194,18 @@ public abstract class BaseSyncProcess {
         String hex = NumberUtil.toHexString(encBytes);
         
         return hex;
+    }
+
+    private ProcessListener getNullProcessListener(){
+        return new ProcessListener(){
+            @Override
+            public void setMax(int max) {}
+            @Override
+            public void next(String message) {}
+            @Override
+            public void setPosition(int current, String message) {}
+            @Override
+            public void finish(String message) {}
+        };
     }
 }
