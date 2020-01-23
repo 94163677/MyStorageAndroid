@@ -40,6 +40,11 @@
     <string name="dialog_search_all">全部</string>
     <string name="dialog_search_disk">所属磁盘：</string>
 
+    <string name="dialog_search_ext_title">高级搜索</string>
+    <string name="dialog_search_ext_file_name_all">文件名包含全部关键字：</string>
+    <string name="dialog_search_ext_file_name_one">文件名包含任意关键字：</string>
+    <string name="dialog_search_ext_file_name_not">文件名不包含关键字：</string>
+
     <string name="dialog_sync_param_title">手动输入同步参数</string>
     <string name="dialog_sync_ip">IP地址：</string>
     <string name="dialog_sync_port">端口：</string>

@@ -45,7 +45,7 @@ import air.kanna.mystorage.dao.OrderBy;
 import air.kanna.mystorage.dao.Pager;
 import air.kanna.mystorage.dao.condition.FileItemCondition;
 import air.kanna.mystorage.dao.impl.android.sqlite.DiskDescriptionDAOAndroidSqliteImpl;
-import air.kanna.mystorage.dao.impl.android.sqlite.FileItemDAOAndroidSqliteImpl;
+import air.kanna.mystorage.dao.impl.android.sqlite.FileItemDAOAndroidSqliteExtImpl;
 import air.kanna.mystorage.model.DiskDescription;
 import air.kanna.mystorage.model.FileItem;
 import air.kanna.mystorage.model.FileType;
@@ -199,7 +199,7 @@ public class FileSearchActivity extends BasicActivity {
                 showErrorMessage(check, null);
             }
             DiskDescriptionDAO diskDao = new DiskDescriptionDAOAndroidSqliteImpl(sqLiteDatabase);
-            FileItemDAO fileDao = new FileItemDAOAndroidSqliteImpl(sqLiteDatabase);
+            FileItemDAO fileDao = new FileItemDAOAndroidSqliteExtImpl(sqLiteDatabase);
 
             diskService = new DiskDescriptionServiceImpl();
             ((DiskDescriptionServiceImpl)diskService).setModelDao(diskDao);
@@ -564,7 +564,10 @@ public class FileSearchActivity extends BasicActivity {
         }
         try{
             cleanUnsucessFiles(basePath);
-            getProgressDialog().show();
+            Dialog dialog = getProgressDialog();
+            dialog.setCancelable(false);
+            dialog.show();
+
             new Thread(){
                 @Override
                 public void run() {

@@ -109,17 +109,9 @@ public class FileItemDAOAndroidSqliteImpl
         return "id";
     }
 
-    private String getConditionSQL(FileItemCondition condition, List<String> params) {
+    protected String getNormalConditionSQL(FileItemCondition condition, List<String> params) {
         StringBuilder sb = new StringBuilder();
 
-        if(condition.getDiskId() != null && condition.getDiskId() > 0) {
-            sb.append(" AND disk_id = ? ");
-            params.add("" + condition.getDiskId());
-        }
-        if(StringUtil.isNotNull(condition.getFileName())) {
-            sb.append(" AND file_name LIKE ? ");
-            params.add('%' + condition.getFileName() + '%');
-        }
         if(condition.getFileType() >= '0') {
             sb.append(" AND file_type = ? ");
             params.add("" + (int)condition.getFileType());
@@ -134,7 +126,7 @@ public class FileItemDAOAndroidSqliteImpl
         }
         if(StringUtil.isNotNull(condition.getFilePath())) {
             sb.append(" AND file_path LIKE ? ");
-            params.add('%' + condition.getFilePath() + '%');
+            params.add(new StringBuilder().append('%').append(condition.getFilePath()).append('%').toString());
         }
 
         if(condition.getCreateDateMin() != null) {
@@ -155,6 +147,22 @@ public class FileItemDAOAndroidSqliteImpl
             params.add("" + condition.getLastModMax().longValue());
         }
 
+        return sb.toString();
+    }
+
+    protected String getConditionSQL(FileItemCondition condition, List<String> params) {
+        StringBuilder sb = new StringBuilder();
+
+        if(condition.getDiskId() != null && condition.getDiskId() > 0) {
+            sb.append(" AND disk_id = ? ");
+            params.add("" + condition.getDiskId());
+        }
+        if(StringUtil.isNotNull(condition.getFileName())) {
+            sb.append(" AND file_name LIKE ? ");
+            params.add(new StringBuilder().append('%').append(condition.getFileName()).append('%').toString());
+        }
+
+        sb.append(getNormalConditionSQL(condition, params));
         return sb.toString();
     }
 }

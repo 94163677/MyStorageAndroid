@@ -40,6 +40,14 @@ public class MyStorageConfigServiceSharedPreferencesImpl
         if(StringUtil.isNotSpace(temp)) {
             config.setSearchFileName(temp);
         }
+        temp = passConfig.getString("searchFileNameOr", "");
+        if(StringUtil.isNotSpace(temp)) {
+            config.setSearchFileNameOr(temp);
+        }
+        temp = passConfig.getString("searchFileNameNot", "");
+        if(StringUtil.isNotSpace(temp)) {
+            config.setSearchFileNameNot(temp);
+        }
         
         temp = passConfig.getString("searchFileType", "");
         if(StringUtil.isNotSpace(temp)) {
@@ -81,6 +89,9 @@ public class MyStorageConfigServiceSharedPreferencesImpl
         editor.putString("dbFileName", "" + config.getDbFileName());
         
         editor.putString("searchFileName", config.getSearchFileName());
+        editor.putString("searchFileNameOr", config.getSearchFileNameOr());
+        editor.putString("searchFileNameNot", config.getSearchFileNameNot());
+
         editor.putString("searchFileType", config.getSearchFileType());
         editor.putString("searchDiskPath", config.getSearchDiskPath());
 
